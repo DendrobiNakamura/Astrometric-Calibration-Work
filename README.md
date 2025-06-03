@@ -6,6 +6,6 @@ Include various work I have done for the prototyping astrometrlic calibration pr
 - PrototypingSim.py (simulates the performance of the astrometric calibration technique against different distortion fields)
 - RecovDistortSim.ipynb (demonstrates the usage of PrototypingSim.py)
 
-The MAVISM module from (https://github.com/smonty93/MAVISIM) might be required for some part of the code.
+The MAVISM module from (https://github.com/smonty93/MAVISIM) is required for some parts of the code.
 
 This work may or may not be continued.
