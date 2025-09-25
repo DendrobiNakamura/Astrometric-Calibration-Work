@@ -6,17 +6,17 @@ from scipy import interpolate
 
 class CreateDist():
     def __init__(self,*,nsamp=31, dist_samp=15,dxdy=0.5,num_shifts=2,rand_scale=10e-5,std=5,N_poly=6,centroid_noise_std=10e-6,mode='random',plot='no',int_test='no'):
-        self._nsamp = nsamp
-        self._dist_samp = dist_samp
-        self._dxdy = dxdy
-        self._num_shifts = num_shifts
-        self._rand_scale = rand_scale
-        self._std = std
-        self._N_poly = N_poly
-        self._centroid_noise_std = centroid_noise_std
-        self._mode = mode
-        self._plot = plot
-        self._int_test = int_test
+        self._nsamp = nsamp # Number of points in each dimension for evaluating/plotting distortion
+        self._dist_samp = dist_samp # Number of points in each dimension for generating distortion
+        self._dxdy = dxdy # The radial distance of the shifts
+        self._num_shifts = num_shifts # The number of shifts to perform
+        self._rand_scale = rand_scale # The scale of the random distortion
+        self._std = std # The spatial correlation scale of the random distortion
+        self._N_poly = N_poly # The order of the polynomial to fit
+        self._centroid_noise_std = centroid_noise_std # The centroid noise to add to the simulated measurements
+        self._mode = mode   # The mode of distortion to use (random or u_hat)
+        self._plot = plot   # Whether to plot the distortion or not
+        self._int_test = int_test   # Whether to perform the interpolation test or not
        
         # Create a grid of data points for generating/holding distortions
         self._x_rand = np.linspace(-17, 17, dist_samp)  # X-coordinates
@@ -66,9 +66,16 @@ class CreateDist():
         d = L @ v
         # plot
         if plot=='yes':
+            plt.figure(figsize=[8,8])
+            arrow_sf = self._rand_scale/np.std(d)
             for i in range(xx.shape[0]):
-                plt.arrow(xx[i],yy[i],d[i,0],d[i,1],width=0.05,color='c')
+                plt.arrow(xx[i],yy[i],arrow_sf*d[i,0],arrow_sf*d[i,1],width=0.05,color='b',head_width=0.35,length_includes_head=True)
             plt.axis("equal")
+            plt.legend(["random distortion"])
+            plt.title(f"Random Spatially Correlated Distortion")
+            plt.xlabel("x-position in field [arcsec]")
+            plt.ylabel("y-position in field [arcsec]")
+            plt.show()
         return d*self._rand_scale/np.std(d)
 
     def _do_shifts(self):
@@ -180,22 +187,34 @@ class CreateDist():
 
     
         if plot=='yes':
-            print('Plotting...')
+            print('Plotting 1...')
             plt.figure(figsize=[8,8])
-            arrow_sf = 100
+            arrow_sf = 300
             Distortion_scale = np.sqrt(np.mean(self._uhat_home_dist[:,0]**2+self._uhat_home_dist[:,1]**2))*1000
             for i in range(len(x)):
                 plt.arrow(x[i],y[i],arrow_sf*self._input_dist[:,0][i],arrow_sf*self._input_dist[:,1][i],
-                          color="b",head_width=0.05,width=0.01,length_includes_head=True)
+                          color="b",head_width=0.15,width=0.01,length_includes_head=True)
                 plt.arrow(x[i],y[i],arrow_sf*self._home1_dist[:,0][i],arrow_sf*self._home1_dist[:,1][i],
-                          color="r",head_width=0.05,width=0.01,length_includes_head=True)
-                #plt.arrow(x[i],y[i],arrow_sf*uhat_home_distx[i],arrow_sf*uhat_home_disty[i],
-                        #color="g",head_width=0.05,width=0.01,length_includes_head=True)
-                #plt.arrow(x_flattened[i],y_flattened[i],arrow_sf*uhat_interp_home_distx[i],arrow_sf*uhat_interp_home_disty[i],
-                #        color="y",head_width=0.05,width=0.01,length_includes_head=True)
+                          color="r",head_width=0.15,width=0.01,length_includes_head=True)
                 plt.axis("square")
-            plt.legend(["true distortion","fitted distortion"])
-            plt.title(f"Field Distortion\n(arrows scaled {arrow_sf:0.0f}x)\n(Distortion RMS {Distortion_scale*1000:0.02f}uas)")
+            plt.legend(["random distortion","fitted distortion"])
+            plt.title(f"Field Distortion with Random Distortion\n(arrows scaled {arrow_sf:0.0f}x)\n(Distortion RMS {Distortion_scale*1000:0.02f}uas)")
+            plt.xlabel("x-position in field [arcsec]")
+            plt.ylabel("y-position in field [arcsec]")
+            plt.show()
+
+            print('Plotting 2...')
+            plt.figure(figsize=[8,8])
+            arrow_sf = 300
+            Distortion_scale = np.sqrt(np.mean(self._uhat_home_dist[:,0]**2+self._uhat_home_dist[:,1]**2))*1000
+            for i in range(len(x)):
+                plt.arrow(x[i],y[i],arrow_sf*uhat_home_distx[i],arrow_sf*uhat_home_disty[i],
+                        color="g",head_width=0.35,width=0.01,length_includes_head=True)
+                plt.arrow(x[i],y[i],arrow_sf*self._home1_dist[:,0][i],arrow_sf*self._home1_dist[:,1][i],
+                          color="r",head_width=0.15,width=0.01,length_includes_head=True)
+                plt.axis("square")
+            plt.legend(["polynomial distortion","fitted distortion"])
+            plt.title(f"Field Distortion with Polynomial Distortion\n(arrows scaled {arrow_sf:0.0f}x)\n(Distortion RMS {Distortion_scale*1000:0.02f}uas)\n(Residual RMS {np.std(self._uhat_home_dist - self._u_hat_dist_h)}uas)")
             plt.xlabel("x-position in field [arcsec]")
             plt.ylabel("y-position in field [arcsec]")
             plt.show()
